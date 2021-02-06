@@ -32,8 +32,7 @@ app.use('/api/user',  AuthController.validate,  require('./routes/user'));
 app.use('/api/version', function(req, res) {
   ApiReturn.result(req, res, `Dropper API version ${require('../package.json').version}`)
 })
-// this must be the last route otherwise it will catch all previous defined routes
-let staticSite = new StaticSite((app));
+
 
 // handle errors
 app.use(function(err, req, res, next) {
