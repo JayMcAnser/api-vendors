@@ -37,6 +37,15 @@ module.exports = {
     return user;
   },
 
+  _save: async function(usr) {
+    let index = USERS.findIndex( (u) => u.id === usr.id)
+    if (index < 0) {
+      throw new Error(`user ${usr.id} not found`)
+    }
+    USERS[index] = usr
+    Jsonfile.writeFileSync(Helper.getFullPath('users.json', { rootKey: 'Path.dataRoot'}), USERS, { spaces: 2, EOL: '\r\n' })
+  },
+
   _filter(obj, where) {
     if (Object.keys(where).length === 0) {
       throw new Error(`[_filter] object has no values`)
@@ -89,5 +98,18 @@ module.exports = {
     }) || false   // should return false not undefined
   },
 
+
+  /**
+   * set the internal refresh token that allowes to reset the account for a user
+   * @param user
+   * @returns {Promise<boolean>}
+   */
+  async checkRefreshToken(user) {
+    if (user.refreshId === undefined) {
+      user.refreshId = Math.ceil(Math.random() * 2000)
+      await this._save(user)
+    }
+    return true;
+  }
 }
 

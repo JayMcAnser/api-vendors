@@ -40,12 +40,15 @@ module.exports = {
           } else {
             //if(bcrypt.compareSync(req.body.password, userInfo.password)) {
             if (userInfo.password === req.body.password) {
+              UserModel.checkRefreshToken(userInfo)
               const token = Jwt.sign({id: userInfo.id}, Config.get('Server.secretKey'), {expiresIn: '1h'});
+              const refreshToken = Jwt.sign({id: userInfo.id, refreshId: userInfo.refreshId}, Config.get('Server.secretKey'), {expiresIn: '100d'});
               ApiReturn.result(req, res, {
                 // see: https://stackoverflow.com/questions/17781472/how-to-get-a-subset-of-a-javascript-objects-properties
                 user: (({name, email}) => ({name, email}))(userInfo),
                 // user: userInfo,
-                token: token
+                token,
+                refreshToken,
               }, 'user login')
             } else {
               ApiReturn.error(req, res, new Error('invalid email/password'), 200)
@@ -58,6 +61,32 @@ module.exports = {
     }
   },
 
+  async refresh(req, res) {
+    let token = req.body.token;
+    if (!token || token.length < 10) {
+      return ApiReturn.error(req, res, new Error(Const.results.noToken), 401 )
+    } else {
+      try {
+        let decoded = Jwt.verify(
+          token,
+          Config.get('Server.secretKey'));
+        // decoded: id, refreshId
+        let userInfo = await UserModel.findById(decoded.id)
+        if ((userInfo.refreshId === decoded.refreshId)) {
+          ApiReturn.result(req, res, {
+            // see: https://stackoverflow.com/questions/17781472/how-to-get-a-subset-of-a-javascript-objects-properties
+            user: (({name, email}) => ({name, email}))(userInfo),
+            // user: userInfo,
+            token: Jwt.sign({id: userInfo.id}, Config.get('Server.secretKey'), {expiresIn: '1h'}),
+          }, 'user restored');
+        } else {
+          ApiReturn.error(req, res, new Error(Const.results.tokenExpired), 401)
+        }
+      } catch (e) {
+        ApiReturn.error(req, res, e, 401)
+      }
+    }
+  },
 
   /**
    * validate the user against the encrypted key
@@ -69,11 +98,14 @@ module.exports = {
     try {
       let token = req.headers && req.headers['authorization'] ? req.headers['authorization'] : ''
       try {
+        if (token.length && token.substr(0, 'bearer'.length).toUpperCase() === 'BEARER') {
+          token = token.substr('bearer'.length).trim()
+        }
         let decoded = Jwt.verify(
           token,
           Config.get('Server.secretKey'));
 
-        req.body.user = await UserModel.findById(decoded.id);
+        // req.body.user = await UserModel.findById(decoded.id);
         req.session = {
           user: await UserModel.findById(decoded.id)
         }
