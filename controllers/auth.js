@@ -88,6 +88,16 @@ module.exports = {
     }
   },
 
+  setupLogging(req) {
+    if (!req.session) {
+      req.session = {}
+    }
+    req.session.log = function(level, message) {
+      Logging.log(level, message)
+    };
+  },
+
+
   /**
    * validate the user against the encrypted key
    * @param req
@@ -109,18 +119,7 @@ module.exports = {
         req.session = {
           user: await UserModel.findById(decoded.id)
         }
-        if (req.session.user.logging && req.session.user.logging.length) {
-          let log = Logging.buildLog(req.session.user.logging);
-          // so we can say req.session.log('error', 'not found')
-          req.session.log = function(level, message) {
-            Logging.write(log, level, message);  // write private log
-            Logging.log(level, message);         // write to global log
-          };
-        } else {
-          req.session.log = function(level, message) {
-            Logging.log(level, message)
-          };
-        }
+        this.setupLogging(req)
       //  res.json({status: Const.status.success, message: 'user logged in', data: null})
         next()
       } catch (err) {
