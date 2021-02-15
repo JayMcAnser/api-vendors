@@ -30,7 +30,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/user',  AuthController.validate,  require('./routes/user'));
 
 app.use('/api/version', function(req, res) {
-  ApiReturn.result(req, res, `Dropper API version ${require('../package.json').version}`)
+  ApiReturn.result(req, res, `API version ${require('../package.json').version}`)
 })
 
 

@@ -6,6 +6,24 @@ const Jwt = require('jsonwebtoken');
 const Logging = require('../lib/logging');
 const ApiReturn = require('../lib/api-return');
 
+const USER_FIELDS = [
+  'name', 'email', 'rights'
+]
+
+const _copyUserFields = (data) => {
+  let result = {}
+  for (let index = 0; index < USER_FIELDS.length; index++) {
+    result[USER_FIELDS[index]] = data[USER_FIELDS[index]]
+  }
+  return result;
+}
+
+const _configDefault = (key, defaultValue) => {
+  if (Config.has(key)) {
+    return Config.get(key)
+  }
+  return defaultValue
+}
 module.exports = {
   /**
    * the creation of a user
@@ -41,12 +59,10 @@ module.exports = {
             //if(bcrypt.compareSync(req.body.password, userInfo.password)) {
             if (userInfo.password === req.body.password) {
               UserModel.checkRefreshToken(userInfo)
-              const token = Jwt.sign({id: userInfo.id}, Config.get('Server.secretKey'), {expiresIn: '1h'});
-              const refreshToken = Jwt.sign({id: userInfo.id, refreshId: userInfo.refreshId}, Config.get('Server.secretKey'), {expiresIn: '100d'});
+              const token = Jwt.sign({id: userInfo.id}, Config.get('Server.secretKey'), {expiresIn: _configDefault('Auth.tokenExpire', '1h')});
+              const refreshToken = Jwt.sign({id: userInfo.id, refreshId: userInfo.refreshId}, Config.get('Server.secretKey'), {expiresIn: _configDefault('Auth.refreshExpire', '100d')});
               ApiReturn.result(req, res, {
-                // see: https://stackoverflow.com/questions/17781472/how-to-get-a-subset-of-a-javascript-objects-properties
-                user: (({name, email}) => ({name, email}))(userInfo),
-                // user: userInfo,
+                user: _copyUserFields(userInfo),
                 token,
                 refreshToken,
               }, 'user login')
@@ -74,10 +90,8 @@ module.exports = {
         let userInfo = await UserModel.findById(decoded.id)
         if ((userInfo.refreshId === decoded.refreshId)) {
           ApiReturn.result(req, res, {
-            // see: https://stackoverflow.com/questions/17781472/how-to-get-a-subset-of-a-javascript-objects-properties
-            user: (({name, email}) => ({name, email}))(userInfo),
-            // user: userInfo,
-            token: Jwt.sign({id: userInfo.id}, Config.get('Server.secretKey'), {expiresIn: '1h'}),
+            user: _copyUserFields(userInfo),
+            token: Jwt.sign({id: userInfo.id}, Config.get('Server.secretKey'), {expiresIn: _configDefault('Auth.tokenExpire', '1h')}),
           }, 'user restored');
         } else {
           ApiReturn.error(req, res, new Error(Const.results.tokenExpired), 401)
@@ -123,7 +137,9 @@ module.exports = {
       //  res.json({status: Const.status.success, message: 'user logged in', data: null})
         next()
       } catch (err) {
-        if (!token) {
+        if (err.name === 'TokenExpiredError') {
+          ApiReturn.error(req, res, err, 'token expired', 401)
+        } else if (!token) {
           ApiReturn.error(req, res, Const.results.accessDenied, 403);
           // res.json({status: Const.status.error, message: Const.results.accessDenied, data: null})
         } else {
@@ -132,8 +148,8 @@ module.exports = {
         }
       }
     } catch(e) {
-      ApiReturn.error(req, res, err)
-      res.json({status: Const.status.error, message: `[authController.validate] ${r.message}`, data: null})
+      ApiReturn.error(req, res, e)
+      res.json({status: Const.status.error, message: `[authController.validate] ${e.message}`, data: null})
     }
   }
 }
