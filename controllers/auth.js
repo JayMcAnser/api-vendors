@@ -104,7 +104,9 @@ module.exports = {
 
   setupLogging(req) {
     if (!req.session) {
-      req.session = {}
+      req.session = {
+        user: {id: 0}
+      }
     }
     req.session.log = function(level, message) {
       Logging.log(level, message)
