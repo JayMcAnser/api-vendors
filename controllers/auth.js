@@ -89,6 +89,7 @@ module.exports = {
         // decoded: id, refreshId
         let userInfo = await UserModel.findById(decoded.id)
         if ((userInfo.refreshId === decoded.refreshId)) {
+        //  ApiReturn.error(req, res, new Error(Const.results.tokenExpired), 401)
           ApiReturn.result(req, res, {
             user: _copyUserFields(userInfo),
             token: Jwt.sign({id: userInfo.id}, Config.get('Server.secretKey'), {expiresIn: _configDefault('Auth.tokenExpire', '1h')}),
@@ -145,7 +146,7 @@ module.exports = {
           ApiReturn.error(req, res, Const.results.accessDenied, 403);
           // res.json({status: Const.status.error, message: Const.results.accessDenied, data: null})
         } else {
-          ApiReturn.error(req, res, err.message)
+          ApiReturn.error(req, res, err.message, 403)
           // res.json({status: Const.status.error, message: err.message, data: null})
         }
       }
