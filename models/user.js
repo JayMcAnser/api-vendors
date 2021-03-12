@@ -9,6 +9,8 @@ const Jsonfile = require('jsonfile');
 const Helper = require('../lib/helper');
 const { v4 : uuidv4} = require('uuid');
 
+const GUEST_ID = 1;
+
 let USERS = [];
 let UserFilename = false
 const _loadUsers = function() {
@@ -110,6 +112,14 @@ module.exports = {
       await this._save(user)
     }
     return true;
+  },
+
+  async guest() {
+    let g = this.findById(GUEST_ID);
+    if (!g) {
+      throw new Error('guest account is missing')
+    }
+    return g;
   }
 }
 
