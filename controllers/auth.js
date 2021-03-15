@@ -9,6 +9,7 @@ const ApiReturn = require('../lib/api-return');
 const USER_FIELDS = [
   'name', 'email', 'rights'
 ]
+const COOKIE_NAME = 'dropperAuth'
 
 const _copyUserFields = (data) => {
   let result = {}
@@ -61,11 +62,20 @@ module.exports = {
               UserModel.checkRefreshToken(userInfo)
               const token = Jwt.sign({id: userInfo.id}, Config.get('Server.secretKey'), {expiresIn: _configDefault('Auth.tokenExpire', '1h')});
               const refreshToken = Jwt.sign({id: userInfo.id, refreshId: userInfo.refreshId}, Config.get('Server.secretKey'), {expiresIn: _configDefault('Auth.refreshExpire', '100d')});
+              // https://stackoverflow.com/questions/16209145/how-to-set-cookie-in-node-js-using-express-framework
+              // res.cookie(COOKIE_NAME, token)
+              // headers = {
+              //   'Set-Cookie': `${COOKIE_NAME}=${token}; HttpOnly`,
+              //   "Access-Control-Allow-Credentials": "true"
+              // };
               ApiReturn.result(req, res, {
                 user: _copyUserFields(userInfo),
                 token,
                 refreshToken,
-              }, 'user login')
+              }, 'user login',
+//                200,
+//                {headers}
+               )
             } else {
               ApiReturn.error(req, res, new Error('invalid email/password'), 200)
             }
@@ -90,9 +100,16 @@ module.exports = {
         let userInfo = await UserModel.findById(decoded.id)
         if ((userInfo.refreshId === decoded.refreshId)) {
         //  ApiReturn.error(req, res, new Error(Const.results.tokenExpired), 401)
+          let token = Jwt.sign({id: userInfo.id}, Config.get('Server.secretKey'), {expiresIn: _configDefault('Auth.tokenExpire', '1h')})
+          // res.writeHead(200, {
+          //   'Set-Cookie': `${COOKIE_NAME}=${token}; HttpOnly`,
+          //   "Access-Control-Allow-Credentials": "true",
+          //   'access-control-expose-headers': 'Set-Cookie'
+          // })
+//           res.cookie(COOKIE_NAME, token)
           ApiReturn.result(req, res, {
             user: _copyUserFields(userInfo),
-            token: Jwt.sign({id: userInfo.id}, Config.get('Server.secretKey'), {expiresIn: _configDefault('Auth.tokenExpire', '1h')}),
+            token: token,
           }, 'user restored');
         } else {
           ApiReturn.error(req, res, new Error(Const.results.tokenExpired), 401)
@@ -127,6 +144,9 @@ module.exports = {
       try {
         if (token.length && token.substr(0, 'bearer'.length).toUpperCase() === 'BEARER') {
           token = token.substr('bearer'.length).trim()
+        }
+        if (!token || (typeof token === 'string' && token.length === 0)) {
+          token = req.cookies ? req.cookies[COOKIE_NAME] : ''
         }
         let decoded = Jwt.verify(
           token,

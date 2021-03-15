@@ -11,6 +11,7 @@ const ApiReturn = require('./lib/api-return');
 const Const = require('./lib/const')
 const StaticSite = require('./lib/static-site');
 const Path = require('path');
+const cookieParser = require('cookie-parser');
 
 // set our logging to the root of the config
 const { setRootPath } = require('./lib/helper');
@@ -18,6 +19,7 @@ const { setRootPath } = require('./lib/helper');
 setRootPath(Path.join(__dirname, '..', Config.get('Path.configRoot')))
 const app = express();
 app.use(cors())
+app.use(cookieParser())
 Logging.init(app)
 
 
