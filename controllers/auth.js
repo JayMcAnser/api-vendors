@@ -57,7 +57,7 @@ module.exports = {
         try {
           if (!userInfo) {
             Logging.log('warn', `[controller.auth].authenticate user ${name} not found`)
-            res.json({status: Const.status.error, message: "invalid email/password!", data: null});
+            ApiReturn.error(req, res, Const.status.error, 'invalid email/password!');
           } else {
             //if(bcrypt.compareSync(req.body.password, userInfo.password)) {
             return (UserModel.passwordValid(req.body.password, userInfo)).then( (result) => {
@@ -180,7 +180,7 @@ module.exports = {
       }
     } catch(e) {
       ApiReturn.error(req, res, e)
-      res.json({status: Const.status.error, message: `[authController.validate] ${e.message}`, data: null})
+      // res.json({status: Const.status.error, message: `[authController.validate] ${e.message}`, data: null})
     }
   }
 }
