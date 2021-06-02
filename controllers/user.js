@@ -1,4 +1,6 @@
-const userModel = require('../models/user');
+const Factory = require('../lib/factory');
+// const userModel = require('../models/user');
+const userModel = Factory.create('user')
 const Bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Const = require('../lib/const')

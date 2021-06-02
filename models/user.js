@@ -24,6 +24,9 @@ _loadUsers();
 
 module.exports = {
 
+  info() {
+    return 'the vendor user model'
+  },
   create: async function(user) {
 
 //    res.json({status:"error", message: 'user.create not implemented', data:null})
@@ -100,6 +103,9 @@ module.exports = {
     }) || false   // should return false not undefined
   },
 
+  async passwordValid(password, user) {
+    return user.password == password
+  },
 
   /**
    * set the internal refresh token that allowes to reset the account for a user

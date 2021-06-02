@@ -1,4 +1,6 @@
-const UserModel = require('../models/user');
+const Factory = require('../lib/factory');
+const UserModel = Factory.create('user')
+//const UserModel = require('../models/user');
 const Bcrypt = require('bcrypt');
 const Const = require('../lib/const')
 const Config = require('config');
@@ -50,7 +52,7 @@ module.exports = {
     if (! name) {
       return ApiReturn.error(req, res, new Error('missing username'), 403)
     } else {
-
+      let UserModel = Factory.create('user');
       return UserModel.findOne({email: name}).then((userInfo) => {
         try {
           if (!userInfo) {
@@ -58,31 +60,35 @@ module.exports = {
             res.json({status: Const.status.error, message: "invalid email/password!", data: null});
           } else {
             //if(bcrypt.compareSync(req.body.password, userInfo.password)) {
-            if (userInfo.password === req.body.password) {
-              UserModel.checkRefreshToken(userInfo)
-              const token = Jwt.sign({id: userInfo.id}, Config.get('Server.secretKey'), {expiresIn: _configDefault('Auth.tokenExpire', '1h')});
-              const refreshToken = Jwt.sign({id: userInfo.id, refreshId: userInfo.refreshId}, Config.get('Server.secretKey'), {expiresIn: _configDefault('Auth.refreshExpire', '100d')});
-              // https://stackoverflow.com/questions/16209145/how-to-set-cookie-in-node-js-using-express-framework
-              // res.cookie(COOKIE_NAME, token)
-              // headers = {
-              //   'Set-Cookie': `${COOKIE_NAME}=${token}; HttpOnly`,
-              //   "Access-Control-Allow-Credentials": "true"
-              // };
-              ApiReturn.result(req, res, {
-                user: _copyUserFields(userInfo),
-                token,
-                refreshToken,
-              }, 'user login',
-//                200,
-//                {headers}
-               )
-            } else {
-              ApiReturn.error(req, res, new Error('invalid email/password'), 200)
-            }
+            return (UserModel.passwordValid(req.body.password, userInfo)).then( (result) => {
+              if (result) {
+                UserModel.checkRefreshToken(userInfo)
+                const token = Jwt.sign({id: userInfo.id}, Config.get('Server.secretKey'), {expiresIn: _configDefault('Auth.tokenExpire', '1h')});
+                const refreshToken = Jwt.sign({id: userInfo.id, refreshId: userInfo.refreshId}, Config.get('Server.secretKey'), {expiresIn: _configDefault('Auth.refreshExpire', '100d')});
+                // https://stackoverflow.com/questions/16209145/how-to-set-cookie-in-node-js-using-express-framework
+                // res.cookie(COOKIE_NAME, token)
+                // headers = {
+                //   'Set-Cookie': `${COOKIE_NAME}=${token}; HttpOnly`,
+                //   "Access-Control-Allow-Credentials": "true"
+                // };
+                ApiReturn.result(req, res, {
+                  user: _copyUserFields(userInfo),
+                  token,
+                  refreshToken,
+                }, 'user login',
+  //                200,
+  //                {headers}
+                 )
+              } else {
+                ApiReturn.error(req, res, new Error('invalid email/password'), 200)
+              }
+            })
           }
         } catch (e) {
           ApiReturn.error(req, res, `[controller.auth].authenticate unexpected error: ${e.message}`)
         }
+      }).catch(  (e) => {
+        ApiReturn.error(req, res, `[controller.auth].access denied: ${e.message}`, 403)
       })
     }
   },
@@ -97,6 +103,7 @@ module.exports = {
           token,
           Config.get('Server.secretKey'));
         // decoded: id, refreshId
+        let UserModel = Factory.create('user')
         let userInfo = await UserModel.findById(decoded.id)
         if ((userInfo.refreshId === decoded.refreshId)) {
         //  ApiReturn.error(req, res, new Error(Const.results.tokenExpired), 401)
@@ -153,6 +160,7 @@ module.exports = {
           Config.get('Server.secretKey'));
 
         // req.body.user = await UserModel.findById(decoded.id);
+        let UserModel = Factory.create('user')
         req.session = {
           user: await UserModel.findById(decoded.id)
         }

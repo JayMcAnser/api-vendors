@@ -16,6 +16,14 @@ const cookieParser = require('cookie-parser');
 // set our logging to the root of the config
 const { setRootPath } = require('./lib/helper');
 
+/**
+ * register our basic factory
+ */
+const Factory = require('./lib/factory');
+Factory.register('user', () => {
+  return require('./models/user');
+})
+
 setRootPath(Path.join(__dirname, '..', Config.get('Path.configRoot')))
 const app = express();
 app.use(cors())
