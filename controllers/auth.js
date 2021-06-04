@@ -27,6 +27,18 @@ const _configDefault = (key, defaultValue) => {
   }
   return defaultValue
 }
+
+const _setupLogging = function(req) {
+  if (!req.session) {
+    req.session = {
+      user: {id: 0}
+    }
+  }
+  req.session.log = function(level, message) {
+    Logging.log(level, message)
+  };
+}
+
 module.exports = {
   /**
    * the creation of a user
@@ -127,17 +139,17 @@ module.exports = {
     }
   },
 
-  setupLogging(req) {
-    if (!req.session) {
-      req.session = {
-        user: {id: 0}
-      }
-    }
-    req.session.log = function(level, message) {
-      Logging.log(level, message)
-    };
-  },
 
+  /**
+   * internal used for testing.
+   * DO NOT CALL FROM ANY WORKING SOFTWARE
+   */
+  async createSession(userId) {
+    let UserModel = Factory.create('user')
+    return {
+      user: await UserModel.findById(userId)
+    }
+  },
 
   /**
    * validate the user against the encrypted key
@@ -161,10 +173,11 @@ module.exports = {
 
         // req.body.user = await UserModel.findById(decoded.id);
         let UserModel = Factory.create('user')
-        req.session = {
-          user: await UserModel.findById(decoded.id)
-        }
-        this.setupLogging(req)
+        req.session = this.createSession(decoded.id)
+        // {
+        //   user: await UserModel.findById(decoded.id)
+        // }
+        _setupLogging(req)
       //  res.json({status: Const.status.success, message: 'user logged in', data: null})
         next()
       } catch (err) {
