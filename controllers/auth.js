@@ -39,6 +39,12 @@ const _setupLogging = function(req) {
   };
 }
 
+const _createSession = async function(userId) {
+  let session = new (Factory.create('session'));
+  await session.init(userId)
+  return session;
+}
+
 module.exports = {
   /**
    * the creation of a user
@@ -145,10 +151,7 @@ module.exports = {
    * DO NOT CALL FROM ANY WORKING SOFTWARE
    */
   async createSession(userId) {
-    let UserModel = Factory.create('user')
-    return {
-      user: await UserModel.findById(userId)
-    }
+    return _createSession(userId)
   },
 
   /**
@@ -172,8 +175,8 @@ module.exports = {
           Config.get('Server.secretKey'));
 
         // req.body.user = await UserModel.findById(decoded.id);
-        let UserModel = Factory.create('user')
-        req.session = this.createSession(decoded.id)
+       //  let UserModel = Factory.create('user')
+        req.session = await _createSession(decoded.id)
         // {
         //   user: await UserModel.findById(decoded.id)
         // }

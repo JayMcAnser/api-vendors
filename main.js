@@ -23,6 +23,9 @@ const Factory = require('./lib/factory');
 Factory.register('user', () => {
   return require('./models/user');
 })
+Factory.register('session', () => {
+  return require('./lib/session')
+})
 
 setRootPath(Path.join(__dirname, '..', Config.get('Path.configRoot')))
 const app = express();
