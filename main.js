@@ -20,12 +20,16 @@ const { setRootPath } = require('./lib/helper');
  * register our basic factory
  */
 const Factory = require('./lib/factory');
-Factory.register('user', () => {
-  return require('./models/user');
-})
-Factory.register('session', () => {
-  return require('./lib/session')
-})
+if (!Factory.has('user')) {
+  Factory.register('user', () => {
+    return require('./models/user');
+  })
+}
+if (!Factory.has('session')) {
+  Factory.register('session', () => {
+    return require('./lib/session')
+  })
+}
 
 setRootPath(Path.join(__dirname, '..', Config.get('Path.configRoot')))
 const app = express();

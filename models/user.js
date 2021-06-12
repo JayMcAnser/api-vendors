@@ -8,7 +8,7 @@ const Const = require('../lib/const')
 const Jsonfile = require('jsonfile');
 const Helper = require('../lib/helper');
 const { v4 : uuidv4} = require('uuid');
-
+const Logging = require('../lib/logging')
 const GUEST_ID = 1;
 
 let USERS = [];
@@ -16,7 +16,12 @@ let UserFilename = false
 const _loadUsers = function() {
   if (USERS.length === 0) {
     UserFilename = Helper.getFullPath('users.json', { rootKey: 'Path.dataRoot'})
-    USERS = Jsonfile.readFileSync(UserFilename)
+    try {
+      USERS = Jsonfile.readFileSync(UserFilename)
+    } catch (e) {
+      Logging.log('error', `the user file ${UserFilename} is not readable`)
+      throw e;
+    }
   }
 }
 // must inialize
