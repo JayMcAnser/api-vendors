@@ -93,7 +93,7 @@ module.exports = {
                   user: _copyUserFields(userInfo),
                   token,
                   refreshToken,
-                }, 'user login',
+                }, `user '${userInfo.username}' logged in`,
   //                200,
   //                {headers}
                  )
@@ -135,7 +135,7 @@ module.exports = {
           ApiReturn.result(req, res, {
             user: _copyUserFields(userInfo),
             token: token,
-          }, 'user restored');
+          }, `user '${userInfo.username}' restored`);
         } else {
           ApiReturn.error(req, res, new Error(Const.results.tokenExpired), 401)
         }
@@ -187,10 +187,10 @@ module.exports = {
         if (err.name === 'TokenExpiredError') {
           ApiReturn.error(req, res, err, 'token expired', 401)
         } else if (!token) {
-          ApiReturn.error(req, res, Const.results.accessDenied, 403);
+          ApiReturn.error(req, res, err, Const.results.accessDenied, 403);
           // res.json({status: Const.status.error, message: Const.results.accessDenied, data: null})
         } else {
-          ApiReturn.error(req, res, err.message, 403)
+          ApiReturn.error(req, res, err, err.message, 403)
           // res.json({status: Const.status.error, message: err.message, data: null})
         }
       }
