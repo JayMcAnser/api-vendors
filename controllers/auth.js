@@ -75,7 +75,7 @@ module.exports = {
         try {
           if (!userInfo) {
             Logging.log('warn', `[controller.auth].authenticate user ${name} not found`)
-            ApiReturn.error(req, res, Const.status.error, 'invalid email/password!');
+            ApiReturn.error(req, res, Const.status.error, 'invalid email/password!', 403);
           } else {
             //if(bcrypt.compareSync(req.body.password, userInfo.password)) {
             return (UserModel.passwordValid(req.body.password, userInfo)).then( (result) => {
