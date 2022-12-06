@@ -56,6 +56,10 @@ module.exports = {
     res.json({status: Const.status.error, message: 'create user is not allowed', data: {}})
   },
 
+  info: function (req, res, next) {
+    return ApiReturn.result(req, res, { status: 'alive' })
+  },
+
   /**
    * return the authentication for the user
    *
